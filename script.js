@@ -86,8 +86,15 @@ function exibirPartidas() {
   div.innerHTML = "";
   partidas.forEach((partida, index) => {
     const p = document.createElement("div");
+
+    // Aplica classe visual de destaque se for partida de desempate
+    p.className = partida.desempate ? "desempate" : "partida";
+
+    const labelDesempate = partida.desempate ? "<strong style='color: red'>(Desempate)</strong> " : "";
     const vencedorTexto = partida.vencedor ? ` - Vencedor: ${partida.vencedor}` : "";
-    p.innerHTML = `(${partida.grupo}) ${partida.jogador1} vs ${partida.jogador2}${vencedorTexto}`;
+
+    p.innerHTML = `${labelDesempate}(${partida.grupo}) ${partida.jogador1} vs ${partida.jogador2}${vencedorTexto}`;
+    
     if (!partida.vencedor) {
       const btn1 = document.createElement("button");
       btn1.textContent = partida.jogador1;
@@ -108,7 +115,38 @@ function registrarVencedor(index, vencedor) {
     vitorias[vencedor]++;
     exibirPartidas();
     atualizarClassificacao();
+    verificarDesempates(partidas[index].grupo); // 👈 Verifica empate ao registrar vencedor
   }
+}
+
+// 🔁 Função para verificar e gerar desempates
+function verificarDesempates(grupo) {
+  const jogadoresGrupo = grupos[grupo];
+  const ranking = jogadoresGrupo.map(j => ({ nome: j, vitorias: vitorias[j] }));
+  ranking.sort((a, b) => b.vitorias - a.vitorias);
+
+  const primeiroLugar = ranking[0].vitorias;
+  const empatados = ranking.filter(j => j.vitorias === primeiroLugar);
+
+  if (empatados.length > 2) {
+    const jáTemPartidas = partidas.some(p => 
+      p.grupo === grupo &&
+      empatados.some(e1 => p.jogador1 === e1.nome || p.jogador2 === e1.nome) &&
+      p.vencedor === null
+    );
+
+    if (!jáTemPartidas) {
+      alert(`Empate no ${grupo}. Nova rodada entre: ${empatados.map(e => e.nome).join(", ")}`);
+      for (let i = 0; i < empatados.length; i++) {
+        for (let j = i + 1; j < empatados.length; j++) {
+          partidas.push({ grupo, jogador1: empatados[i].nome, jogador2: empatados[j].nome, vencedor: null });
+        }
+      }
+      exibirPartidas();
+    }
+  }
+  partidas.push({ grupo, jogador1: empatados[i].nome, jogador2: empatados[j].nome, vencedor: null, desempate: true });
+
 }
 
 function atualizarClassificacao() {
@@ -183,7 +221,6 @@ function registrarVencedorMataMata(faseIndex, jogoIndex, vencedor) {
   const jogo = faseMataMata[faseIndex][jogoIndex];
   if (!jogo.vencedor) {
     jogo.vencedor = vencedor;
-    // Verifica se a fase terminou
     const todosDefinidos = faseMataMata[faseIndex].every(j => j.vencedor);
     if (todosDefinidos) {
       const proximos = faseMataMata[faseIndex].map(j => j.vencedor);
@@ -194,3 +231,17 @@ function registrarVencedorMataMata(faseIndex, jogoIndex, vencedor) {
     exibirFaseMataMata(faseMataMata);
   }
 }
+
+//Travar recarregamento da página
+
+window.addEventListener('keydown', function (e) {
+  if ((e.ctrlKey && e.key === 'r') || e.key === 'F5') {
+      e.preventDefault();
+  }
+});
+
+window.addEventListener('beforeunload', function (e) {
+  const message = 'Você tem dados não salvos. Tem certeza que deseja sair?';
+  e.returnValue = message;
+  return message;
+});

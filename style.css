@@ -165,3 +165,20 @@ body {
 #jogosMataMata button {
   margin-left: 10px;
 }
+
+
+.partida {
+  border: 1px solid #ccc;
+  padding: 8px;
+  margin: 5px 0;
+  border-radius: 4px;
+}
+
+.desempate {
+  border: 2px dashed red;
+  background-color: #ffeaea;
+  padding: 8px;
+  margin: 8px 0;
+  border-radius: 4px;
+  font-weight: bold;
+}

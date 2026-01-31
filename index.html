@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
   <title>Torneio de Sinuca</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style_corrigido.css">
 </head>
 <body>
   <div class="container">
@@ -16,6 +16,10 @@
       <input type="text" id="nomeJogador" placeholder="Nome do jogador">
       <button onclick="adicionarJogador()">Adicionar</button>
       <ul id="listaJogadores"></ul>
+<h3>Importar Lista</h3>
+<input type="file" id="arquivoLista" accept=".txt,.json">
+<button onclick="importarArquivo()">Importar Lista</button>
+
 
       <label for="quantGrupos">Quantidade de grupos:</label>
       <input type="number" id="quantGrupos" min="1" max="10" value="2" />
@@ -48,6 +52,6 @@
     </section>
   </div>
 
-  <script src="script.js"></script>
+  <script src="script_corrigido.js"></script>
 </body>
 </html>

@@ -152,20 +152,40 @@ function verificarDesempates(grupo) {
 function atualizarClassificacao() {
   const div = document.getElementById("classificacaoGrupos");
   div.innerHTML = "";
+
   for (const grupo in grupos) {
     const jogadoresGrupo = grupos[grupo];
-    const ranking = jogadoresGrupo.map(j => ({ nome: j, vitorias: vitorias[j] }))
-      .sort((a, b) => b.vitorias - a.vitorias)
-      .slice(0, 2);
+
+    const rankingCompleto = jogadoresGrupo
+      .map(j => ({ nome: j, vitorias: vitorias[j] }))
+      .sort((a, b) => b.vitorias - a.vitorias);
+
+    // Verifica se existe pelo menos 1 vitória no grupo
+    const existeVitoria = rankingCompleto.some(j => j.vitorias > 0);
+
+    let primeiro = "Primeiro colocado: (aguardando)";
+    let segundo = "Segundo colocado: (aguardando)";
+
+    if (existeVitoria) {
+      // Seleciona os dois primeiros jogadores pelo ranking real
+      const top2 = rankingCompleto.slice(0, 2);
+
+      primeiro = `${top2[0].nome} (${top2[0].vitorias} vitórias)`;
+      segundo = `${top2[1].nome} (${top2[1].vitorias} vitórias)`;
+    }
 
     const g = document.createElement("div");
-    g.innerHTML = `<strong>${grupo} - Classificados:</strong><br>` +
-      ranking.map(j => `${j.nome} (${j.vitorias} vitórias)`).join("<br>");
+    g.innerHTML = `
+      <strong>${grupo} - Classificados:</strong><br>
+      ${primeiro}<br>
+      ${segundo}
+    `;
+
     div.appendChild(g);
   }
 }
 
-function gerarMataMata() {
+/*function gerarMataMata() {
   const classificados = [];
   for (const grupo in grupos) {
     const jogadoresGrupo = grupos[grupo];
@@ -176,6 +196,58 @@ function gerarMataMata() {
   }
   faseMataMata = [];
   criarFase(faseMataMata, embaralhar(classificados));
+  exibirFaseMataMata(faseMataMata);
+}*/
+function gerarMataMata() {
+  faseMataMata = [];
+  const classificados = [];
+
+  for (const grupo in grupos) {
+    const jogadoresGrupo = grupos[grupo];
+    const ranking = jogadoresGrupo
+      .map(j => ({ nome: j, vitorias: vitorias[j] }))
+      .sort((a, b) => b.vitorias - a.vitorias);
+
+    const primeiro = ranking[0];
+    const segundo = ranking[1];
+
+    // Verifica se já existe classificação REAL
+    const classificacaoPronta =
+      primeiro.vitorias > 0 || segundo.vitorias > 0;
+
+    if (classificacaoPronta) {
+      // Adicionar normalmente
+      classificados.push(primeiro.nome);
+      classificados.push(segundo.nome);
+    } else {
+      // Inserir placeholders
+      classificados.push("Primeiro colocado (aguardando)");
+      classificados.push("Segundo colocado (aguardando)");
+    }
+  }
+
+  // Criar estrutura da fase sem embaralhar placeholders
+  const jogadoresValidos = classificados.filter(
+    nome => !nome.includes("(aguardando)")
+  );
+
+  // Se ainda não temos jogadores reais suficientes, mostrar preview
+  if (jogadoresValidos.length < 2) {
+    faseMataMata = [
+      [
+        {
+          jogador1: "Primeiro colocado (aguardando)",
+          jogador2: "Segundo colocado (aguardando)",
+          vencedor: null
+        }
+      ]
+    ];
+    exibirFaseMataMata(faseMataMata);
+    return;
+  }
+
+  // Gerar mata-mata REAL
+  criarFase(faseMataMata, embaralhar(jogadoresValidos));
   exibirFaseMataMata(faseMataMata);
 }
 
@@ -245,3 +317,43 @@ window.addEventListener('beforeunload', function (e) {
   e.returnValue = message;
   return message;
 });
+
+
+function importarArquivo() {
+  const arq = document.getElementById("arquivoLista").files[0];
+  if (!arq) return alert("Selecione um arquivo!");
+
+  const reader = new FileReader();
+
+  reader.onload = function(e) {
+    let conteudo = e.target.result;
+    let lista = [];
+
+    if (arq.name.toLowerCase().endsWith(".txt")) {
+      lista = conteudo.split("\n").map(l => l.trim()).filter(l => l);
+    } else if (arq.name.toLowerCase().endsWith(".json")) {
+      try {
+        const json = JSON.parse(conteudo);
+        lista = json.jogadores || [];
+      } catch {
+        alert("Erro no JSON");
+        return;
+      }
+    } else {
+      alert("Formato inválido (use .txt ou .json)");
+      return;
+    }
+
+    lista.forEach(nome => {
+      if (nome && !jogadores.includes(nome)) {
+        jogadores.push(nome);
+        vitorias[nome] = 0;
+      }
+    });
+
+    atualizarLista();
+    alert(lista.length + " jogadores importados!");
+  };
+
+  reader.readAsText(arq);
+}
